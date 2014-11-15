@@ -2,10 +2,10 @@
 start_seconds="$(date +%s)"
 
 if [[ "$(wget --tries=3 --timeout=5 --spider http://google.com 2>&1 | grep 'connected')" ]]; then
-	echo "Network connection detected..."
+	echo "Network connection detected."
 	ping_result="Connected"
 else
-	echo "Network connection not detected. Unable to reach google.com..."
+	echo "Network connection not detected. Unable to reach google.com."
 	ping_result="Not Connected"
 fi
 
@@ -41,7 +41,7 @@ apt_package_check_list=(
 	htop
 )
 
-echo "Check for apt packages to install..."
+echo "Check for apt packages to install."
 
 # Loop through each of our packages that should be installed on the system. If
 # not yet installed, it should be added to the array of packages to install.
@@ -68,7 +68,7 @@ echo mysql-server mysql-server/root_password_again password root | debconf-set-s
 
 # Provide our custom apt sources before running `apt-get update`
 ln -sf /srv/config/apt-source-append.list /etc/apt/sources.list.d/vvv-sources.list
-echo "Linked custom apt sources"
+echo "Linked custom apt sources."
 
 if [[ $ping_result == "Connected" ]]; then
 	# If there are any packages to be installed in the apt_package_list array,
@@ -81,115 +81,117 @@ if [[ $ping_result == "Connected" ]]; then
 		# our appended apt source.list
 
 		# Retrieve the Nginx signing key from nginx.org
-		echo "Applying Nginx signing key..."
+		echo "Applying Nginx signing key."
 		wget --quiet http://nginx.org/keys/nginx_signing.key -O- | apt-key add -
 
 		# Apply the nodejs assigning key
-		echo "Applying nodejs signing key..."
+		echo "Applying nodejs signing key."
 		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C7917B12 2>&1 | grep "gpg:"
 		apt-key export C7917B12 | apt-key add -
 
 		# Apply the git assigning key
-		echo "Applying git signing key..."
+		echo "Applying git signing key."
 		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key E1DF1F24 2>&1 | grep "gpg:"
 		apt-key export E1DF1F24 | apt-key add -
 
 		# Apply the fish assigning key
-		echo "Applying fish signing key..."
+		echo "Applying fish signing key."
 		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 6DC33CA5 2>&1 | grep "gpg:"
 		apt-key export 6DC33CA5 | apt-key add -
 
 		# update all of the package references before installing anything
-		echo "Running apt-get update..."
+		echo "Running apt-get update."
 		apt-get update --assume-yes
 
 		# install required packages
-		echo "Installing apt-get packages..."
+		echo "Installing apt-get packages."
 		apt-get install --assume-yes ${apt_package_install_list[@]}
 
-		# Clean up apt caches
+		echo "Cleaning up apt caches."
 		apt-get clean
 	fi
 
 else
-	echo -e "\nNo network connection available, skipping package installation"
+	echo -e "\nNo network connection available, skipping package installation."
 fi
 
 # Configuration for nginx
 if [[ ! -e /etc/nginx/server.key ]]; then
-	echo "Generate Nginx server private key..."
+	echo "Generate Nginx server private key."
 	vvvgenrsa="$(openssl genrsa -out /etc/nginx/server.key 2048 2>&1)"
 	echo $vvvgenrsa
 fi
 if [[ ! -e /etc/nginx/server.csr ]]; then
-	echo "Generate Certificate Signing Request (CSR)..."
+	echo "Generate Certificate Signing Request (CSR)."
 	openssl req -new -batch -key /etc/nginx/server.key -out /etc/nginx/server.csr
 fi
 if [[ ! -e /etc/nginx/server.crt ]]; then
-	echo "Sign the certificate using the above private key and CSR..."
+	echo "Sign the certificate using the above private key and CSR."
 	vvvsigncert="$(openssl x509 -req -days 365 -in /etc/nginx/server.csr -signkey /etc/nginx/server.key -out /etc/nginx/server.crt 2>&1)"
 	echo $vvvsigncert
 fi
 
-echo -e "\nSetup configuration files..."
+echo -e "\nSetup configuration files."
 
 # Used to to ensure proper services are started on `vagrant up`
+echo " * /srv/config/init/vvv-start.conf               -> /etc/init/vvv-start.conf"
 cp /srv/config/init/vvv-start.conf /etc/init/vvv-start.conf
 
-echo " * /srv/config/init/vvv-start.conf               -> /etc/init/vvv-start.conf"
-
 # Copy nginx configuration from local
+echo " * /srv/config/nginx-config/nginx.conf           -> /etc/nginx/nginx.conf"
 cp /srv/config/nginx-config/nginx.conf /etc/nginx/nginx.conf
+
+echo " * /srv/config/nginx-config/nginx-wp-common.conf -> /etc/nginx/nginx-wp-common.conf"
 cp /srv/config/nginx-config/nginx-wp-common.conf /etc/nginx/nginx-wp-common.conf
+
+echo " * /srv/config/nginx-config/sites/               -> /etc/nginx/custom-sites"
 if [[ ! -d /etc/nginx/custom-sites ]]; then
 	mkdir /etc/nginx/custom-sites/
 fi
 rsync -rvzh --delete /srv/config/nginx-config/sites/ /etc/nginx/custom-sites/
 
-echo " * /srv/config/nginx-config/nginx.conf           -> /etc/nginx/nginx.conf"
-echo " * /srv/config/nginx-config/nginx-wp-common.conf -> /etc/nginx/nginx-wp-common.conf"
-echo " * /srv/config/nginx-config/sites/               -> /etc/nginx/custom-sites"
-
 # Copy php-fpm configuration from local
+echo " * /srv/config/php5-fpm-config/php5-fpm.conf     -> /etc/php5/fpm/php5-fpm.conf"
 cp /srv/config/php5-fpm-config/php5-fpm.conf /etc/php5/fpm/php5-fpm.conf
+
+echo " * /srv/config/php5-fpm-config/www.conf          -> /etc/php5/fpm/pool.d/www.conf"
 cp /srv/config/php5-fpm-config/www.conf /etc/php5/fpm/pool.d/www.conf
+
+echo " * /srv/config/php5-fpm-config/php-custom.ini    -> /etc/php5/fpm/conf.d/php-custom.ini"
 cp /srv/config/php5-fpm-config/php-custom.ini /etc/php5/fpm/conf.d/php-custom.ini
 
-echo " * /srv/config/php5-fpm-config/php5-fpm.conf     -> /etc/php5/fpm/php5-fpm.conf"
-echo " * /srv/config/php5-fpm-config/www.conf          -> /etc/php5/fpm/pool.d/www.conf"
-echo " * /srv/config/php5-fpm-config/php-custom.ini    -> /etc/php5/fpm/conf.d/php-custom.ini"
-
+echo " * /srv/config/homebin                           -> /home/vagrant/bin"
 rsync -rvzh --delete /srv/config/homebin/ /home/vagrant/bin/
 
-echo " * /srv/config/homebin                           -> /home/vagrant/bin"
+
 
 # RESTART SERVICES
 #
 # Make sure the services we expect to be running are running.
-echo -e "\nRestart services..."
+echo -e "\nRestarting services."
 service nginx restart
 service php5-fpm restart
 
 # If MySQL is installed, go through the various imports and service tasks.
 exists_mysql="$(service mysql status)"
 if [[ "mysql: unrecognized service" != "${exists_mysql}" ]]; then
-	echo -e "\nSetup MySQL configuration file links..."
+	echo -e "\nSetting up MySQL configuration file links."
 
 	# Copy mysql configuration from local
-	cp /srv/config/mysql-config/my.cnf /etc/mysql/my.cnf
-	cp /srv/config/mysql-config/root-my.cnf /home/vagrant/.my.cnf
-
 	echo " * /srv/config/mysql-config/my.cnf               -> /etc/mysql/my.cnf"
+	cp /srv/config/mysql-config/my.cnf /etc/mysql/my.cnf
+
 	echo " * /srv/config/mysql-config/root-my.cnf          -> /home/vagrant/.my.cnf"
+	cp /srv/config/mysql-config/root-my.cnf /home/vagrant/.my.cnf
 
 	# MySQL gives us an error if we restart a non running service, which
 	# happens after a `vagrant halt`. Check to see if it's running before
 	# deciding whether to start or restart.
 	if [[ "mysql stop/waiting" == "${exists_mysql}" ]]; then
-		echo "service mysql start"
+		echo "Starting MySQL service."
 		service mysql start
 	else
-		echo "service mysql restart"
+		echo "Restarting MySQL service."
 		service mysql restart
 	fi
 
@@ -198,16 +200,16 @@ if [[ "mysql: unrecognized service" != "${exists_mysql}" ]]; then
 	# Create the databases (unique to system) that will be imported with
 	# the mysqldump files located in database/backups/
 	if [[ -f /srv/database/init-custom.sql ]]; then
+		echo -e "\nInitial custom MySQL scripting."
 		mysql -u root -proot < /srv/database/init-custom.sql
-		echo -e "\nInitial custom MySQL scripting..."
 	else
-		echo -e "\nNo custom MySQL scripting found in database/init-custom.sql, skipping..."
+		echo -e "\nNo custom MySQL scripting found in database/init-custom.sql, skipping."
 	fi
 
 	# Setup MySQL by importing an init file that creates necessary
 	# users and databases that our vagrant setup relies on.
+	echo "Initial MySQL preparations."
 	mysql -u root -proot < /srv/database/init.sql
-	echo "Initial MySQL prep..."
 
 	# Process each mysqldump SQL file in database/backups to import
 	# an initial data set for MySQL.
@@ -224,7 +226,7 @@ fi
 if [[ $ping_result == "Connected" ]]; then
 	# WP-CLI Install
 	if [[ ! -a /usr/local/bin/wp ]]; then
-		echo -e "\nDownloading wp-cli, see http://wp-cli.org"
+		echo -e "\nDownloading wp-cli."
 		curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 		chmod +x wp-cli.phar
 		sudo mv wp-cli.phar /usr/local/bin/wp
@@ -232,26 +234,26 @@ if [[ $ping_result == "Connected" ]]; then
 
 	# Install and configure the latest stable version of WordPress
 	if [[ ! -d /srv/www/wordpress ]]; then
-		echo "Downloading WordPress, see http://wordpress.org/"
+		echo "Downloading WordPress."
 		cd /srv/www/
 		curl -L -O https://wordpress.org/latest.tar.gz
 		tar -xvf latest.tar.gz
 		rm latest.tar.gz
 		cd /srv/www/wordpress
-		echo "Configuring WordPress..."
+		echo "Configuring WordPress."
 		wp core config --dbname=wordpress --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
 define( 'WP_DEBUG', true );
 PHP
 		wp core install --url=wp.vvv.dev --quiet --title="Wordpress" --admin_name=admin --admin_email="admin@local.dev" --admin_password="password"
 	else
-		echo "Updating WordPress..."
+		echo "Updating WordPress."
 		cd /srv/www/wordpress
 		wp core upgrade
 	fi
 
 	# Download phpMyAdmin
 	if [[ ! -d /srv/www/default/database-admin ]]; then
-		echo "Downloading phpMyAdmin 4.2.11..."
+		echo "Downloading phpMyAdmin 4.2.11."
 		cd /srv/www/default
 		wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.2.11/phpMyAdmin-4.2.11-all-languages.tar.gz/download'
 		tar -xf phpmyadmin.tar.gz
@@ -262,7 +264,7 @@ PHP
 	fi
 	cp /srv/config/phpmyadmin-config/config.inc.php /srv/www/default/database-admin/
 else
-	echo -e "\nNo network available, skipping network installations"
+	echo -e "\nNo network available, skipping network installations."
 fi
 
 # Find new sites to setup.
@@ -296,7 +298,7 @@ done
 # RESTART SERVICES AGAIN
 #
 # Make sure the services we expect to be running are running.
-echo -e "\nRestart Nginx..."
+echo -e "\nRestarting Nginx."
 service nginx restart
 
 # Parse any vvv-hosts file located in www/ or subdirectories of www/
@@ -304,10 +306,10 @@ service nginx restart
 # self aware.
 #
 # Domains should be entered on new lines.
-echo "Cleaning the virtual machine's /etc/hosts file..."
+echo "Cleaning the virtual machine's /etc/hosts file."
 sed -n '/# vvv-auto$/!p' /etc/hosts > /tmp/hosts
 mv /tmp/hosts /etc/hosts
-echo "Adding domains to the virtual machine's /etc/hosts file..."
+echo "Adding domains to the virtual machine's /etc/hosts file."
 find /srv/www/ -maxdepth 5 -name 'vvv-hosts' | \
 while read hostfile; do
 	while IFS='' read -r line || [ -n "$line" ]; do
@@ -322,43 +324,54 @@ done
 
 # Configure Fish and dotfiles
 if [[ ! -d /home/vagrant/.dotfiles ]]; then
-	echo "Configuring Fish and personal dotfiles"
+	echo "Installing Fish and personal dotfiles."
 	sudo -u vagrant -H sh -c "curl -L https://github.com/klapec/oh-my-fish/raw/master/tools/install.fish | fish; 
-		git clone https://github.com/klapec/.dotfiles.git ~/.dotfiles; 
-		cp ~/.dotfiles/.gitconfig ~/; 
-		cp ~/.dotfiles/.tmux.conf ~/; 
-		mkdir -p ~/.config/fish; 
-		cp ~/.dotfiles/config.fish ~/.config/fish/ ; 
-		echo vagrant | sudo -S chsh -s /usr/bin/fish vagrant"
-	else
-		echo "Fish and dotfiles already configured"
+	git clone https://github.com/klapec/.dotfiles.git ~/.dotfiles; 
+	cp ~/.dotfiles/.gitconfig ~/; 
+	cp ~/.dotfiles/.tmux.conf ~/; 
+	mkdir -p ~/.config/fish; 
+	cp ~/.dotfiles/config.fish ~/.config/fish/ ; 
+	echo vagrant | sudo -S chsh -s /usr/bin/fish vagrant"
+else
+	echo "Fish and dotfiles already installed."
 fi
 
 # Installing Ghost
 if [[ ! -d /srv/www/ghost ]]; then
-		echo "Downloading Ghost"
-		cd /srv/www/
-		curl -L https://ghost.org/zip/ghost-latest.zip -o ghost.zip
-		unzip -uo ghost.zip -d ghost
-		rm ghost.zip
-		cd ghost
-		echo "Setting up Ghost"
-		npm install --production
-		cp /srv/config/ghost-config/config.js /srv/www/ghost/
-		cp /srv/config/ghost-config/ghost.conf /etc/init/
-		service ghost start
-	else
-		echo "Ghost already installed"
-		service ghost restart
+	echo "Downloading Ghost."
+	cd /srv/www/
+	curl -L https://ghost.org/zip/ghost-latest.zip -o ghost.zip
+	unzip -uo ghost.zip -d ghost
+	rm ghost.zip
+	cd ghost
+	echo "Setting up Ghost."
+	npm install --production
+	cp /srv/config/ghost-config/config.js /srv/www/ghost/
+	cp /srv/config/ghost-config/ghost.conf /etc/init/
+	service ghost start
+
+else
+	echo "Ghost already installed."
+	service ghost restart
 fi
 
 # Create Tmux session
 # echo "Creating Tmux session"
 # tmux new -d -s Vagrant
 
+# Clean up MOTD
+if [[ -a /etc/update-motd.d/10-help-text ]]; then
+	echo "Cleaning up MOTD."
+	cd /etc/update-motd.d/
+	rm 10-help-text 50-landscape-sysinfo 51-cloudguest 98-cloudguest
+
+else
+	echo "MOTD already cleaned up."
+fi
+
 end_seconds="$(date +%s)"
 echo "-----------------------------"
-echo "Provisioning complete in "$(expr $end_seconds - $start_seconds)" seconds"
+echo "Provisioning complete in "$(expr $end_seconds - $start_seconds)" seconds."
 if [[ $ping_result == "Connected" ]]; then
 	echo "External network connection established, packages up to date."
 else
