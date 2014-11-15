@@ -45,5 +45,4 @@
 !/www/vvv-hosts
 
 # And a few of our web directories are important to share.
-/www/default/*
-!/www/default/index.php
+!/www/default
