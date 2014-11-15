@@ -16,21 +16,22 @@ This repo contains stuff necessary to set up local development environment for W
 
 ### Usernames and passwords
 
-Database username and password for WordPress installation is `wp` and `wp`.
-
-WordPress admin username and password for WordPress installation is `admin` and `password`.
-
 #### WordPress
-* LOCAL PATH: vagrant/www/wordpress
-* VM PATH: /srv/www/wordpress
+* Local path: vagrant/www/wordpress
+* VM path: /srv/www/wordpress
 * URL: `http://wp.vvv.dev`
-* DB Name: `wordpress`
+* Admin username: `admin`
+* Admin password: `password`
+* DB name: `wordpress`
+* DB nsername: `wp`
+* DB nassword: `wp`
 
 #### MySQL
 * User: `root`
 * Pass: `root`
 
 #### Ghost
-* LOCAL PATH: vagrant/www/ghost
-* VM PATH: /srv/www/ghost
+* Local path: vagrant/www/ghost
+* VM path: /srv/www/ghost
 * URL: `http://ghost.vvv.dev`
+* Admin panel URL: `http://ghost.vvv.dev/ghost`
