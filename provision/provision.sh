@@ -33,10 +33,10 @@ apt_package_check_list=(
 	nginx
 	mysql-server
 	sqlite
+	nodejs
 	git
 	zip
 	unzip
-	nodejs
 	fish
 	htop
 )
@@ -84,11 +84,6 @@ if [[ $ping_result == "Connected" ]]; then
 		echo "Applying Nginx signing key."
 		wget --quiet http://nginx.org/keys/nginx_signing.key -O- | apt-key add -
 
-		# Apply the nodejs assigning key
-		echo "Applying nodejs signing key."
-		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C7917B12 2>&1 | grep "gpg:"
-		apt-key export C7917B12 | apt-key add -
-
 		# Apply the git assigning key
 		echo "Applying git signing key."
 		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key E1DF1F24 2>&1 | grep "gpg:"
@@ -99,11 +94,11 @@ if [[ $ping_result == "Connected" ]]; then
 		apt-key adv --quiet --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 6DC33CA5 2>&1 | grep "gpg:"
 		apt-key export 6DC33CA5 | apt-key add -
 
-		# update all of the package references before installing anything
-		echo "Running apt-get update."
-		apt-get update --assume-yes
+		# Node.js repo
+		echo "Adding node.js repository"
+		curl -sS -L https://deb.nodesource.com/setup_0.12 | sudo bash -
 
-		# install required packages
+		# Install required packages
 		echo "Installing apt-get packages."
 		apt-get install --assume-yes ${apt_package_install_list[@]}
 
@@ -227,7 +222,7 @@ if [[ $ping_result == "Connected" ]]; then
 	# WP-CLI Install
 	if [[ ! -a /usr/local/bin/wp ]]; then
 		echo -e "\nDownloading wp-cli."
-		curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+		curl -sS -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 		chmod +x wp-cli.phar
 		sudo mv wp-cli.phar /usr/local/bin/wp
 	fi
@@ -236,7 +231,7 @@ if [[ $ping_result == "Connected" ]]; then
 	if [[ ! -d /srv/www/wordpress ]]; then
 		echo "Downloading WordPress."
 		cd /srv/www/
-		curl -L -O https://wordpress.org/latest.tar.gz
+		curl -sS -L -O https://wordpress.org/latest.tar.gz
 		tar -xvf latest.tar.gz
 		rm latest.tar.gz
 		cd /srv/www/wordpress
@@ -253,11 +248,11 @@ PHP
 
 	# Download phpMyAdmin
 	if [[ ! -d /srv/www/default/database-admin ]]; then
-		echo "Downloading phpMyAdmin 4.2.11."
+		echo "Downloading phpMyAdmin 4.4.11."
 		cd /srv/www/default
-		wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.2.11/phpMyAdmin-4.2.11-all-languages.tar.gz/download'
+		wget -q -O phpmyadmin.tar.gz 'https://files.phpmyadmin.net/phpMyAdmin/4.4.11/phpMyAdmin-4.4.11-all-languages.tar.gz'
 		tar -xf phpmyadmin.tar.gz
-		mv phpMyAdmin-4.2.11-all-languages database-admin
+		mv phpMyAdmin-4.4.11-all-languages database-admin
 		rm phpmyadmin.tar.gz
 	else
 		echo "PHPMyAdmin already installed."
@@ -322,29 +317,28 @@ while read hostfile; do
 	done < $hostfile
 done
 
-# Configure Fish and dotfiles
-if [[ ! -d /home/vagrant/.dotfiles ]]; then
-	echo "Installing Fish and personal dotfiles."
-	sudo -u vagrant -H sh -c "curl -L https://github.com/klapec/oh-my-fish/raw/master/tools/install.fish | fish; 
-	git clone https://github.com/klapec/.dotfiles.git ~/.dotfiles; 
-	cp ~/.dotfiles/.gitconfig ~/; 
-	cp ~/.dotfiles/.tmux.conf ~/; 
-	mkdir -p ~/.config/fish; 
-	cp ~/.dotfiles/config.fish ~/.config/fish/ ; 
-	echo vagrant | sudo -S chsh -s /usr/bin/fish vagrant"
+# Install oh-my-fish
+if [[ ! -d /home/vagrant/.oh-my-fish ]]; then
+	echo "Installing Oh-my-fish"
+	cd /home/vagrant/
+	sudo -u vagrant -H sh -c "curl -L -sS https://github.com/oh-my-fish/oh-my-fish/raw/master/tools/install.fish | fish";
+	sudo -u vagrant -H sh -c "git clone https://github.com/klapec/.dotfiles.git .dotfiles"; 
+	mkdir -p .config/fish; 
+	cp .dotfiles/config.fish .config/fish/; 
+	echo vagrant | sudo -S chsh -s /usr/bin/fish vagrant
 else
-	echo "Fish and dotfiles already installed."
+	echo "Oh-my-fish already installed."
 fi
 
 # Installing Ghost
 if [[ ! -d /srv/www/ghost ]]; then
 	echo "Downloading Ghost."
 	cd /srv/www/
-	curl -L https://ghost.org/zip/ghost-latest.zip -o ghost.zip
+	curl -L -sS https://ghost.org/zip/ghost-latest.zip -o ghost.zip
 	unzip -uo ghost.zip -d ghost
 	rm ghost.zip
 	cd ghost
-	echo "Setting up Ghost."
+	echo "Setting up Ghost. (this will take some time)"
 	npm install --production
 	cp /srv/config/ghost-config/config.js /srv/www/ghost/
 	cp /srv/config/ghost-config/ghost.conf /etc/init/
@@ -354,10 +348,6 @@ else
 	echo "Ghost already installed."
 	service ghost restart
 fi
-
-# Create Tmux session
-# echo "Creating Tmux session"
-# tmux new -d -s Vagrant
 
 # Clean up MOTD
 if [[ -a /etc/update-motd.d/10-help-text ]]; then

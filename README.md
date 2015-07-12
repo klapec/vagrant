@@ -2,6 +2,12 @@
 
 This repo contains stuff necessary to set up local development environment for Wordpress and Ghost. It is based on [Vagrant](http://vagrantup.com) and [Varying Vagrant Vagrants](https://github.com/varying-vagrant-vagrants/vvv/). All credits and kudos to developers maintaining these fantastic projects.
 
+### Requirements
+* vagrant-hostsupdater plugin - `vagrant plugin install vagrant-hostsupdater`
+
+### How to use
+Once those plugins are installed, `vagrant up` and you're ready to go.
+
 ### What's inside
 * Ubuntu 14.04
 * Nginx
