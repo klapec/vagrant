@@ -6,7 +6,7 @@ This repo contains stuff necessary to set up local development environment for W
 * vagrant-hostsupdater plugin - `vagrant plugin install vagrant-hostsupdater`
 
 ### How to use
-Once those plugins are installed, `vagrant up` and you're ready to go.
+Once vagrant-hostsupdater installed, run `vagrant up` and you're ready to go.
 
 ### What's inside
 * Ubuntu 14.04
@@ -17,8 +17,7 @@ Once those plugins are installed, `vagrant up` and you're ready to go.
 * Wordpress
 * Ghost
 * Git
-* Fish shell + oh-my-fish
-* [Personal dotfiles](https://github.com/klapec/.dotfiles)
+* Fish shell with oh-my-fish
 
 ### Usernames and passwords
 
