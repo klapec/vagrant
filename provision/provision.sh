@@ -321,16 +321,32 @@ done
 if [[ ! -d /home/vagrant/.oh-my-fish ]]; then
 	echo "Installing Oh-my-fish"
 	cd /home/vagrant/
-	sudo -u vagrant -H sh -c "curl -L -sS https://github.com/oh-my-fish/oh-my-fish/raw/master/tools/install.fish | fish";
-	sudo -u vagrant -H sh -c "git clone https://github.com/klapec/.dotfiles.git .dotfiles"; 
-	mkdir -p .config/fish; 
-	cp .dotfiles/config.fish .config/fish/; 
+	sudo -u vagrant -H sh -c "curl -L -sS https://github.com/oh-my-fish/oh-my-fish/raw/master/tools/install.fish | fish"
+	mkdir -p .config/fish
 	echo vagrant | sudo -S chsh -s /usr/bin/fish vagrant
 else
 	echo "Oh-my-fish already installed."
 fi
 
-# Installing Ghost
+# Install dotfiles
+if [[ ! -d /home/vagrant/.dotfiles ]]; then
+	echo "Installing dotfiles"
+	cd /home/vagrant/
+	sudo -u vagrant -H sh -c "git clone https://github.com/klapec/.dotfiles.git .dotfiles"
+	cp .dotfiles/config.fish .config/fish/
+	cd .oh-my-fish/plugins/
+	sudo -u vagrant -H sh -c "git clone https://github.com/oh-my-fish/plugin-theme.git theme"
+	sudo -u vagrant -H sh -c "git clone https://github.com/oh-my-fish/plugin-sublime.git sublime"
+	sudo -u vagrant -H sh -c "git clone https://github.com/oh-my-fish/plugin-brew.git brew"
+	cd ../themes/
+	sudo -u vagrant -H sh -c "git clone https://github.com/oh-my-fish/theme-bobthefish.git bobthefish"
+	rm bobthefish/fish_greeting.fish
+	rm bobthefish/fish_right_prompt.fish
+else
+	echo "Dotfiles already installed."
+fi
+
+# Install Ghost
 if [[ ! -d /srv/www/ghost ]]; then
 	echo "Downloading Ghost."
 	cd /srv/www/
